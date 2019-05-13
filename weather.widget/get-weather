@@ -76,17 +76,35 @@ const get = ({ schemehostpath, params }) => {
       response.on('data', chunk => body += chunk);
       response.on('end', () => {
         if (response.statusCode < 200 || response.statusCode > 299) {
-          reject(new Error((`Request failed: ${response.statusCode} ${response.statusMessage}
-                            ${body}`).replace(/^ {2,}/gm,'')));
+          const error_message = `Request failed: ${response.statusCode} ${response.statusMessage}
+          schemehostpath: ${schemehostpath}
+          params: ${JSON.stringify(params)}
+          body:
+          ${body}`;
+          const reformatted_error_message = error_message.replace(/^ {2,}/gm,'');
+          reject(new Error(reformatted_error_message));
         }
         else resolve(body);
       })
     });
-    request.on('error', err => reject(err));
+    request.on('error', err => {
+      err.message = `${err.message}
+
+      called with -
+      schemehostpath: ${schemehostpath}
+      params: ${params}`;
+      reject(err);
+    });
   });
 };
 
-const getGeoIP = async () => OPTIONS.static ? OPTIONS : GEOIP_API.transform(await get(GEOIP_API));
+const getGeoIP = async () => {
+  if (OPTIONS.static) {
+    throw new Error('use GEOLOCATION_API');
+  } else {
+    return GEOIP_API.transform(await get(GEOIP_API));
+  }
+}
 
 const getGeoLocation = async () => GEOLOCATION_API.transform(await get(GEOLOCATION_API))
 
