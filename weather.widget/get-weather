@@ -19,8 +19,14 @@ const GEOIP_API = {
   params: {},
   transform: (data) => {
     // {..."city":"Berkeley",...,"lat":37.8664,"lon":-122.257,...,"regionName":"California",...}
-    const { city, region, lat: latitude, lon: longitude } = JSON.parse(data);
-    return { city, region, lang: 'en', latitude, longitude };
+    try {
+      const { city, region, lat: latitude, lon: longitude } = JSON.parse(data);
+      return { city, region, lang: 'en', latitude, longitude };
+    }
+    catch (e) {
+      console.log("Error in GEOIP_API transform with data value:\n" + data);
+      throw e;
+    }
   },
 };
 
@@ -31,7 +37,7 @@ const GEOIP_API = {
 //     language: 'en',
 //     output: 'json',
 //   },
-//   transform: data => {
+//   transform: (data) => {
 //     // {"ip":"50.242.117.125",...,"region_name":"California","city":"Union City",...,"latitude":37.589,"longitude":-122.0461,"location":{...,"languages":[{"code":"en",...}]...}}
 //     const { city, region_name: region, location: { languages: [{ code: lang }] }, latitude, longitude } = JSON.parse(data);
 //     return { city, region, lang, latitude, longitude };
@@ -44,11 +50,17 @@ const GEOLOCATION_API = {
     q: `${OPTIONS.city},${OPTIONS.region}`,
     key: OPTIONS.geolocationApiKey,
   },
-  transform: data => {
+  transform: (data) => {
     // {"documentation":"https://opencagedata.com/api",...,"results":[{...,"geometry":{"lat":-37.7845585,"lng":144.9728553}},...],...,"thanks":"For using an OpenCage Data API",...}
-    const { results: [{ geometry: { lat: latitude, lng: longitude } }] } = JSON.parse(data);
-    const { city, region } = OPTIONS;
-    return { city, region, lang: 'en', latitude, longitude };
+    try {
+      const { results: [{ geometry: { lat: latitude, lng: longitude } }] } = JSON.parse(data);
+      const { city, region } = OPTIONS;
+      return { city, region, lang: 'en', latitude, longitude };
+    }
+    catch (e) {
+      console.log("Error in GEOLOCATION_API transform with data value:\n" + data);
+      throw e;
+    }
   },
 };
 
@@ -61,7 +73,13 @@ const WEATHER_API = {
   },
   transform: (data, city, region) => {
     // {..,"currently":{"time":1551856440,"summary":"Overcast","icon":"cloudy",...},"daily":{...},"offset":-5}
-    return { ...(JSON.parse(data)), location: `${city}, ${region}` };
+    try {
+      return { ...(JSON.parse(data)), location: `${city}, ${region}` };
+    }
+    catch (e) {
+      console.log("Error in WEATHER_API with data value:\n" + data);
+      throw e;
+    }
   }
 };
 

@@ -188,24 +188,31 @@ render: -> """
 
 update: (output, domEl) ->
 
-  @$domEl = $(domEl)
+  try
 
-  channel = JSON.parse(output)
-  if channel
-    delete localStorage.cachedOutput
-    localStorage.setItem("cachedOutput", output)
-  else
-    channel = JSON.parse(localStorage.getItem("cachedOutput"))
-    return @renderError(channel, output) unless channel
+    @$domEl = $(domEl)
 
-  if channel.code  # Dark Sky returns error code like 400
-    return @renderError(data, channel.item?.title)
+    if output.match(/^Error/)
+      return @renderError(output, 'get-weather error')
 
-  @renderCurrent channel
-  @renderForecast channel if @appearance.showForecast
+    channel = JSON.parse(output)
+    if channel
+      delete localStorage.cachedOutput
+      localStorage.setItem("cachedOutput", output)
+    else
+      channel = JSON.parse(localStorage.getItem("cachedOutput"))
+      return @renderError(channel, output) unless channel
 
-  @$domEl.find('.error').remove()
-  @$domEl.children().show()
+    if channel.code  # Dark Sky returns error code like 400
+      return @renderError(data, channel.item?.title)
+
+    @renderCurrent channel
+    @renderForecast channel if @appearance.showForecast
+
+    @$domEl.find('.error').remove()
+    @$domEl.children().show()
+  catch e
+    return @renderError(output, 'error')
 
 renderCurrent: (channel) ->
   weather  = channel.currently
@@ -244,7 +251,11 @@ renderForecastItem: (data, iconSet) ->
   """
 
 renderError: (data, message) ->
-  console.error 'weather widget:', data.error if data?.error
+  if data?.error
+    console.error 'weather widget:', data.error
+  else
+    console.error 'weather widget:', data
+
   @$domEl.children().hide()
 
   message ?= """
